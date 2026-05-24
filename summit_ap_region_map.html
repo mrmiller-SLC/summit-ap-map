@@ -40,11 +40,14 @@
   .page-header p { font-size: 0.78rem; color: #666; margin-top: 2px; }
 
   /* Map constrained to 50% width */
+  .map-wrapper {
+    margin-bottom: 16px;
+  }
+
   .map-container {
     position: relative;
     display: inline-block;
     width: 50%;
-    margin-bottom: 16px;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 12px rgba(0,0,0,0.12);
@@ -52,6 +55,69 @@
   .map-container img {
     width: 100%;
     display: block;
+  }
+
+  /* Overlay panel sitting top-right inside the map image */
+  .map-overlay-panel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 3;
+  }
+
+  .overlay-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(34, 31, 31, 0.82);
+    border-left: 3px solid var(--red);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.12s;
+    backdrop-filter: blur(4px);
+    min-width: 150px;
+  }
+
+  .overlay-card:hover {
+    background: rgba(205, 10, 27, 0.88);
+    transform: translateX(-2px);
+  }
+
+  .oc-icon {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: white;
+    background: var(--red);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .overlay-card:hover .oc-icon {
+    background: white;
+    color: var(--red);
+  }
+
+  .oc-text strong {
+    display: block;
+    font-size: 0.75rem;
+    color: white;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .oc-text span {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.7);
   }
 
   .region-btn {
@@ -180,36 +246,39 @@
   </div>
 </div>
 
-<div class="map-container" id="mapContainer">
-  <img src="Regional%20Map%20and%20Leadership_1.jpg" alt="Summit Line Regional Map" id="mapImg" onload="positionButtons()">
-  <button class="region-btn" id="rb-1"  onclick="openModal('r1')"  title="Region 1"></button>
-  <button class="region-btn" id="rb-7"  onclick="openModal('r7')"  title="Region 7"></button>
-  <button class="region-btn" id="rb-15" onclick="openModal('r15')" title="Region 15"></button>
-  <button class="region-btn" id="rb-14" onclick="openModal('r14')" title="Region 14"></button>
-  <button class="region-btn" id="rb-9"  onclick="openModal('r9')"  title="Region 9"></button>
-  <button class="region-btn" id="rb-10" onclick="openModal('r10')" title="Region 10"></button>
-</div>
+<div class="map-wrapper">
+  <div class="map-container" id="mapContainer">
+    <img src="Regional%20Map%20and%20Leadership_1.jpg" alt="Summit Line Regional Map" id="mapImg" onload="positionButtons()">
+    <button class="region-btn" id="rb-1"  onclick="openModal('r1')"  title="Region 1"></button>
+    <button class="region-btn" id="rb-7"  onclick="openModal('r7')"  title="Region 7"></button>
+    <button class="region-btn" id="rb-15" onclick="openModal('r15')" title="Region 15"></button>
+    <button class="region-btn" id="rb-14" onclick="openModal('r14')" title="Region 14"></button>
+    <button class="region-btn" id="rb-9"  onclick="openModal('r9')"  title="Region 9"></button>
+    <button class="region-btn" id="rb-10" onclick="openModal('r10')" title="Region 10"></button>
 
-<div class="side-regions">
-  <div class="side-card" onclick="openModal('r12')">
-    <div class="sc-icon">R12</div>
-    <div class="sc-text"><strong>Region 12 — Major Projects</strong><span>Click to view AP contact</span></div>
-  </div>
-  <div class="side-card" onclick="openModal('r20')">
-    <div class="sc-icon">R20</div>
-    <div class="sc-text"><strong>Region 20 — Foundations</strong><span>Click to view AP contact</span></div>
-  </div>
-  <div class="side-card" onclick="openModal('r30')">
-    <div class="sc-icon">R30</div>
-    <div class="sc-text"><strong>Region 30 — Data Centers</strong><span>Click to view AP contact</span></div>
-  </div>
-  <div class="side-card" onclick="openModal('r90')">
-    <div class="sc-icon">R90</div>
-    <div class="sc-text"><strong>Region 90 — All Regions</strong><span>Click to view AP contacts</span></div>
-  </div>
-  <div class="side-card" onclick="openModal('exec')">
-    <div class="sc-icon">EX</div>
-    <div class="sc-text"><strong>Executive Leadership</strong><span>Click to view contacts</span></div>
+    <!-- Overlay panel top-right on the image -->
+    <div class="map-overlay-panel">
+      <div class="overlay-card" onclick="openModal('r12')">
+        <div class="oc-icon">R12</div>
+        <div class="oc-text"><strong>Region 12</strong><span>Major Projects</span></div>
+      </div>
+      <div class="overlay-card" onclick="openModal('r20')">
+        <div class="oc-icon">R20</div>
+        <div class="oc-text"><strong>Region 20</strong><span>Foundations</span></div>
+      </div>
+      <div class="overlay-card" onclick="openModal('r30')">
+        <div class="oc-icon">R30</div>
+        <div class="oc-text"><strong>Region 30</strong><span>Data Centers</span></div>
+      </div>
+      <div class="overlay-card" onclick="openModal('r90')">
+        <div class="oc-icon">R90</div>
+        <div class="oc-text"><strong>Region 90</strong><span>All Regions</span></div>
+      </div>
+      <div class="overlay-card" onclick="openModal('exec')">
+        <div class="oc-icon">EX</div>
+        <div class="oc-text"><strong>Executive</strong><span>Leadership</span></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -306,12 +375,12 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDi
 // Hotspot positions as % of rendered image size
 // Based on new square map image layout
 const regionPositions = {
-  'rb-1':  { top:  2, left: 25, width: 60, height: 46 },  // large red upper — ID/MT/WY/CO/UT
-  'rb-7':  { top: 30, left:  0, width: 17, height: 40 },  // orange — California
-  'rb-15': { top: 36, left: 17, width: 15, height: 20 },  // dark gray — N. Nevada
-  'rb-14': { top: 50, left: 17, width: 13, height: 20 },  // light gray — S. Nevada
-  'rb-9':  { top: 54, left: 26, width: 22, height: 34 },  // light gray — AZ/NM
-  'rb-10': { top: 52, left: 50, width: 45, height: 42 },  // black — Texas
+  'rb-1':  { top: 30, left: 38, width:  8, height: 10 },
+  'rb-7':  { top: 50, left:  7, width:  8, height: 10 },
+  'rb-15': { top: 46, left: 24, width:  8, height: 10 },
+  'rb-14': { top: 59, left: 26, width:  8, height: 10 },
+  'rb-9':  { top: 72, left: 36, width:  8, height: 10 },
+  'rb-10': { top: 78, left: 62, width:  8, height: 10 },
 };
 
 function positionButtons() {
