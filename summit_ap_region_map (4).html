@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Summit AP Region Map</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --red: #CD0A1B;
+    --carbon: #221F1F;
+    --light-gray: #f4f4f4;
+    --mid-gray: #e0e0e0;
+    --white: #ffffff;
+    --font: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--light-gray);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .page-header .logo-bar {
+    width: 6px;
+    height: 36px;
+    background: var(--red);
+    border-radius: 3px;
+  }
+
+  .page-header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--carbon);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .page-header p {
+    font-size: 0.78rem;
+    color: #666;
+    margin-top: 2px;
+  }
+
+  .map-container {
+    position: relative;
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .map-container img {
+    width: 100%;
+    display: block;
+  }
+
+  /* Clickable region overlays - positioned as % of image */
+  .region-btn {
+    position: absolute;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.18s;
+    z-index: 2;
+  }
+
+  .region-btn:hover {
+    background: rgba(205, 10, 27, 0.18);
+    outline: 2px solid var(--red);
+  }
+
+  .region-btn .region-label {
+    display: none;
+  }
+
+  /* Side panels row */
+  .side-regions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .side-card {
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 14px 20px;
+    flex: 1;
+    min-width: 180px;
+    cursor: pointer;
+    border-left: 5px solid var(--red);
+    transition: box-shadow 0.18s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .side-card:hover {
+    box-shadow: 0 4px 18px rgba(205,10,27,0.18);
+    transform: translateY(-2px);
+  }
+
+  .side-card .sc-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--red);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .side-card .sc-text strong {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--carbon);
+    font-weight: 700;
+  }
+
+  .side-card .sc-text span {
+    font-size: 0.72rem;
+    color: #777;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(34,31,31,0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal-overlay.active {
+    display: flex;
+  }
+
+  .modal {
+    background: var(--white);
+    border-radius: 12px;
+    width: 92%;
+    max-width: 480px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+    overflow: hidden;
+    animation: modalIn 0.22s ease;
+  }
+
+  @keyframes modalIn {
+    from { transform: scale(0.93) translateY(12px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  .modal-header {
+    background: var(--red);
+    padding: 18px 22px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .modal-header .region-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 4px;
+  }
+
+  .modal-header h2 {
+    color: var(--white);
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .modal-close {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 12px;
+    transition: background 0.15s;
+  }
+
+  .modal-close:hover { background: rgba(255,255,255,0.35); }
+
+  .modal-body {
+    padding: 20px 22px;
+  }
+
+  /* Contact card(s) */
+  .contact-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--mid-gray);
+  }
+
+  .contact-card:last-child { border-bottom: none; }
+
+  .contact-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center top;
+    flex-shrink: 0;
+    border: 3px solid var(--mid-gray);
+  }
+
+  .contact-avatar.placeholder {
+    background: var(--carbon);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+  }
+
+  .contact-info strong {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--carbon);
+    font-weight: 700;
+  }
+
+  .contact-info .title {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 8px;
+  }
+
+  .contact-info a.email-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--red);
+    text-decoration: none;
+    font-weight: 600;
+    border: 1.5px solid var(--red);
+    border-radius: 20px;
+    padding: 4px 12px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .contact-info a.email-link:hover {
+    background: var(--red);
+    color: white;
+  }
+
+  .contact-info a.email-link svg {
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="logo-bar"></div>
+  <div>
+    <h1>AP Team — Regional Contacts</h1>
+    <p>Click a region to view your Accounts Payable contact</p>
+  </div>
+</div>
+
+<!-- Map with overlay buttons -->
+<div class="map-container" id="mapContainer">
+  <img src="Regional_Map_and_Leadership_1.jpg" alt="Summit Line Regional Map" id="mapImg" onload="positionButtons()">
+
+  <!-- Region overlays — positioned after image loads -->
+  <button class="region-btn" id="rb-1"   onclick="openModal('r1')"  title="Region 1 – Greater West"></button>
+  <button class="region-btn" id="rb-7"   onclick="openModal('r7')"  title="Region 7 – Northern California"></button>
+  <button class="region-btn" id="rb-9"   onclick="openModal('r9')"  title="Region 9 – AZ, NM & TX"></button>
+  <button class="region-btn" id="rb-10"  onclick="openModal('r10')" title="Region 10 – New Mexico & Texas"></button>
+  <button class="region-btn" id="rb-14"  onclick="openModal('r14')" title="Region 14 – Southern Nevada"></button>
+  <button class="region-btn" id="rb-15"  onclick="openModal('r15')" title="Region 15 – Northern Nevada"></button>
+</div>
+
+<!-- Side region buttons (scope-based, not geographic) -->
+<div class="side-regions">
+  <div class="side-card" onclick="openModal('r12')">
+    <div class="sc-icon">R12</div>
+    <div class="sc-text">
+      <strong>Region 12 — Major Projects</strong>
+      <span>Click to view AP contact</span>
+    </div>
+  </div>
+  <div class="side-card" onclick="openModal('r20')">
+    <div class="sc-icon">R20</div>
+    <div class="sc-text">
+      <strong>Region 20 — Foundations</strong>
+      <span>Click to view AP contact</span>
+    </div>
+  </div>
+  <div class="side-card" onclick="openModal('r30')">
+    <div class="sc-icon">R30</div>
+    <div class="sc-text">
+      <strong>Region 30 — Data Centers</strong>
+      <span>Click to view AP contact</span>
+    </div>
+  </div>
+  <div class="side-card" onclick="openModal('r90')">
+    <div class="sc-icon">R90</div>
+    <div class="sc-text">
+      <strong>Region 90 — All Regions</strong>
+      <span>Click to view AP contacts</span>
+    </div>
+  </div>
+  <div class="side-card" onclick="openModal('exec')">
+    <div class="sc-icon">EX</div>
+    <div class="sc-text">
+      <strong>Executive Leadership</strong>
+      <span>Click to view contacts</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="region-tag" id="modalTag"></div>
+        <h2 id="modalTitle"></h2>
+      </div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ─── Photo data (base64 placeholders — replace src with actual hosted image URLs) ───
+// For now using initials avatars; swap src strings for real URLs once uploaded to doc library.
+
+const people = {
+  donna:   { name: 'Donna Reynolds',   title: 'Accounts Payable Associate II',  email: 'DMReynolds@summitlineconstruction.com',  initials: 'DR' },
+  grace:   { name: 'Grace Teufel',     title: 'Accounts Payable Associate',     email: 'GTeufel@summitlineconstruction.com',     initials: 'GT' },
+  melissa: { name: 'Melissa Harrison', title: 'Accounts Payable Associate',     email: 'MHarrison@summitlineconstruction.com',   initials: 'MH' },
+  rashall: { name: 'Rashall Crispi',   title: 'Accounts Payable',               email: null,                                     initials: 'RC', placeholder: true },
+  camilla: { name: 'Camilla Nielsen',  title: 'Accounts Payable Associate',     email: 'CJNielsen@summitlineconstruction.com',   initials: 'CN' },
+  kat:     { name: 'Kathryn Haley',    title: 'Accounts Payable Specialist',    email: 'KHaley@summitlineconstruction.com',      initials: 'KH' },
+  kelly:   { name: 'Kelly Forest',     title: 'Accounting Administrator',       email: 'kforest@summitlineconstruction.com',     initials: 'KF' },
+  kim:     { name: 'Kim Peterson',     title: 'Sr. Accounts Payable Specialist',email: 'KPeterson@summitlineconstruction.com',   initials: 'KP' },
+  tammy:   { name: 'Tammy Coombs',     title: 'AP Credit Card Supervisor',      email: 'tkcoombs@summitlineconstruction.com',    initials: 'TC' },
+  jessica: { name: 'Jessica Nielsen',  title: 'Accounts Payable Team Lead',     email: 'jsnielsen@summitlineconstruction.com',   initials: 'JN' },
+  micaela: { name: 'Micaela Miller',   title: 'Accounts Payable Manager',       email: 'MRMiller@summitlineconstruction.com',    initials: 'MM' },
+};
+
+const regions = {
+  r1:   { tag: 'Region 01', title: 'Greater West',          contacts: ['donna']   },
+  r7:   { tag: 'Region 07', title: 'Northern California',   contacts: ['grace']   },
+  r9:   { tag: 'Region 09', title: 'AZ, NM & TX',           contacts: ['melissa'] },
+  r10:  { tag: 'Region 10', title: 'New Mexico & Texas',    contacts: ['rashall'] },
+  r12:  { tag: 'Region 12', title: 'Major Projects',        contacts: ['camilla'] },
+  r14:  { tag: 'Region 14', title: 'Southern Nevada',       contacts: ['kat']     },
+  r15:  { tag: 'Region 15', title: 'Northern Nevada',       contacts: ['kelly']   },
+  r20:  { tag: 'Region 20', title: 'Foundations',           contacts: ['kim']     },
+  r30:  { tag: 'Region 30', title: 'Data Centers',          contacts: ['kim']     },
+  r90:  { tag: 'Region 90', title: 'All Regions',           contacts: ['tammy','jessica','micaela'] },
+  exec: { tag: 'Executive', title: 'Executive Leadership',  contacts: ['tammy','micaela'] },
+};
+
+function avatarHTML(person) {
+  // Swap the src below with actual hosted photo URLs once uploaded to SharePoint doc library
+  // e.g. src="https://quantaservices.sharepoint.com/sites/SummitAccountsPayable/Shared%20Documents/photos/donna.jpg"
+  if (person.placeholder) {
+    return `<div class="contact-avatar placeholder" style="width:60px;height:60px;border-radius:50%;background:#CD0A1B;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;flex-shrink:0;">${person.initials}</div>`;
+  }
+  // Using initials avatar for now — replace with <img class="contact-avatar" src="URL"> once photos are hosted
+  const colors = ['#221F1F','#3a3a3a','#555','#444','#2d2d2d'];
+  const bg = colors[person.initials.charCodeAt(0) % colors.length];
+  return `<div class="contact-avatar placeholder" style="width:60px;height:60px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;flex-shrink:0;border:3px solid #e0e0e0;">${person.initials}</div>`;
+}
+
+function emailBtnHTML(email) {
+  if (!email) return `<span style="font-size:0.75rem;color:#aaa;font-style:italic;">Contact pending — new hire</span>`;
+  return `<a class="email-link" href="mailto:${email}">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+    ${email}
+  </a>`;
+}
+
+function openModal(regionKey) {
+  const r = regions[regionKey];
+  if (!r) return;
+  document.getElementById('modalTag').textContent = r.tag;
+  document.getElementById('modalTitle').textContent = r.title;
+
+  let html = '';
+  r.contacts.forEach(key => {
+    const p = people[key];
+    html += `<div class="contact-card">
+      ${avatarHTML(p)}
+      <div class="contact-info">
+        <strong>${p.name}</strong>
+        <div class="title">${p.title}</div>
+        ${emailBtnHTML(p.email)}
+      </div>
+    </div>`;
+  });
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
+
+// ─── Position map overlay buttons ───
+// These percentages correspond to where each numbered region label sits on the map image.
+// Adjust top/left/width/height if the map image dimensions change.
+const regionPositions = {
+  'rb-1':  { top: 20, left: 18, width: 22, height: 42 },
+  'rb-7':  { top: 35, left:  5, width: 14, height: 28 },
+  'rb-9':  { top: 52, left: 24, width: 22, height: 38 },
+  'rb-10': { top: 52, left: 46, width: 30, height: 38 },
+  'rb-14': { top: 48, left: 14, width: 12, height: 20 },
+  'rb-15': { top: 28, left: 14, width: 11, height: 18 },
+};
+
+function positionButtons() {
+  const container = document.getElementById('mapContainer');
+  const img = document.getElementById('mapImg');
+  const h = img.offsetHeight;
+  const w = img.offsetWidth;
+
+  Object.entries(regionPositions).forEach(([id, pos]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.style.top    = (pos.top    / 100 * h) + 'px';
+    btn.style.left   = (pos.left   / 100 * w) + 'px';
+    btn.style.width  = (pos.width  / 100 * w) + 'px';
+    btn.style.height = (pos.height / 100 * h) + 'px';
+  });
+}
+
+window.addEventListener('resize', positionButtons);
+</script>
+</body>
+</html>
